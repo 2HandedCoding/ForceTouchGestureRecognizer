@@ -13,11 +13,16 @@
 /**
  *  This property is sensitivity of force of the touch to perform an action. Default is 1.0.
  */
-@property (nonatomic) CGFloat forceSensitivity;
+@property (nonatomic) IBInspectable CGFloat forceSensitivity;
 
 /**
  *  The force of the touch. It is available during the execution of the action.
  */
 @property (nonatomic, readonly) CGFloat force;
+
+/**
+ * Minimum time between possible recognitions in ms
+ */
+@property (nonatomic) NSInteger minTime;
 
 @end

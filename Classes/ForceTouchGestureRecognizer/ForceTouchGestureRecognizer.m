@@ -8,14 +8,19 @@
 
 #import "ForceTouchGestureRecognizer.h"
 #import <UIKit/UIGestureRecognizerSubclass.h>
+#define DEFAULT_SENSITIVITY 1.0f
+#define DEFAULT_MIN_TIME 1000.0f
+
 
 @interface ForceTouchGestureRecognizer ()
 
 @property (nonatomic, readwrite) CGFloat force;
-
+@property (nonatomic, strong) UISelectionFeedbackGenerator * generator;
 @end
 
-@implementation ForceTouchGestureRecognizer
+@implementation ForceTouchGestureRecognizer {
+    NSDate * lastRecognized;
+}
 
 - (instancetype)init
 {
@@ -40,19 +45,47 @@
 
 - (void)commonInit
 {
-    self.forceSensitivity = 1.;
+    self.forceSensitivity = DEFAULT_SENSITIVITY;
+    self.minTime = DEFAULT_MIN_TIME;
+}
+
+- (BOOL) shouldRecognize {
+    if (!lastRecognized) return true;
+    NSInteger msSinceLastReco = abs((NSInteger)([lastRecognized timeIntervalSinceNow]*1000));
+    if (msSinceLastReco < self.minTime) {
+        return false ;
+    } else {
+        return true;
+    }
+    
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
+    if (![self shouldRecognize]) {
+        self.state = UIGestureRecognizerStateCancelled;
+        return;
+    }
     self.force = 0.;
+    if (self.generator == nil) {
+        self.generator = [[UISelectionFeedbackGenerator alloc] init];
+        [self.generator prepare];
+    }
+    self.state = UIGestureRecognizerStatePossible;
+    
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
+    if (self.state != UIGestureRecognizerStatePossible || ![self shouldRecognize])
+    {
+        self.state = UIGestureRecognizerStateCancelled;
+        return;
+    }
+    
     UITouch *touch = [touches anyObject];
-    UIView *view = touch.view;
-
+    UIView *view = self.view;
+    
     if (!CGRectContainsPoint(view.bounds, [touch locationInView:view])) {
         self.state = UIGestureRecognizerStateFailed;
         return;
@@ -65,7 +98,25 @@
     {
         self.force = touch.force;
         self.state = UIGestureRecognizerStateRecognized;
+        [self.generator selectionChanged];
+        lastRecognized = [NSDate date];
     }
+}
+
+- (void) touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    self.state = UIGestureRecognizerStateCancelled;
+    self.generator = nil;
+}
+
+- (void) touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    if (self.state == UIGestureRecognizerStateRecognized) {
+        self.state = UIGestureRecognizerStateEnded;
+    }
+    self.generator = nil;
+}
+
+- (BOOL) gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(nonnull UIGestureRecognizer *)otherGestureRecognizer {
+    return true;
 }
 
 @end
