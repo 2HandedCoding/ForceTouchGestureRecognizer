@@ -15,7 +15,7 @@
 @interface ForceTouchGestureRecognizer ()
 
 @property (nonatomic, readwrite) CGFloat force;
-@property (nonatomic, strong) UISelectionFeedbackGenerator * generator;
+@property (nonatomic, strong) UIImpactFeedbackGenerator * generator;
 @end
 
 @implementation ForceTouchGestureRecognizer {
@@ -68,7 +68,7 @@
     }
     self.force = 0.;
     if (self.generator == nil) {
-        self.generator = [[UISelectionFeedbackGenerator alloc] init];
+        self.generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy];
         [self.generator prepare];
     }
     self.state = UIGestureRecognizerStatePossible;
@@ -98,7 +98,7 @@
     {
         self.force = touch.force;
         self.state = UIGestureRecognizerStateRecognized;
-        [self.generator selectionChanged];
+        [self.generator impactOccurred];
         lastRecognized = [NSDate date];
     }
 }
